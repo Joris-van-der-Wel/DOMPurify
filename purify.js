@@ -197,6 +197,10 @@
      *                                                 `HTMLHtmlElement` will be returned instead
      * @property {Boolean}  [RETURN_DOM_FRAGMENT=false] Decide if a DOM `DocumentFragment` should be returned,
      *                                                  instead of a html string
+     * @property {Boolean}  [RETURN_DOM_IMPORT=false]   If `RETURN_DOM` or `RETURN_DOM_FRAGMENT` is enabled, decide if
+     *                                                  the returned DOM `Node` is imported into the current `Document`
+     *                                                  If this flag is not enabled the `Node` will belong (its
+     *                                                  ownerDocument) to a fresh `HTMLDocument`, created by DOMPurify.
      * @property {Boolean}  [SANITIZE_DOM=true]         Output should be free from DOM clobbering attacks?
      * @property {Boolean}  [KEEP_CONTENT=true]         Keep element content when removing element?
      */
@@ -208,6 +212,7 @@
     var WHOLE_DOCUMENT = false;
     var RETURN_DOM = false;
     var RETURN_DOM_FRAGMENT = false;
+    var RETURN_DOM_IMPORT = false;
     var SANITIZE_DOM = true;
     var KEEP_CONTENT = true;
 
@@ -258,6 +263,7 @@
         WHOLE_DOCUMENT      = cfg.WHOLE_DOCUMENT      || false; // Default false
         RETURN_DOM          = cfg.RETURN_DOM          || false; // Default false
         RETURN_DOM_FRAGMENT = cfg.RETURN_DOM_FRAGMENT || false; // Default false
+        RETURN_DOM_IMPORT   = cfg.RETURN_DOM_IMPORT   || false; // Default false
         SANITIZE_DOM        = cfg.SANITIZE_DOM        !== false; // Default true
         KEEP_CONTENT        = cfg.KEEP_CONTENT        !== false; // Default true
 
@@ -660,6 +666,10 @@
                 }
             } else {
                 returnNode = body;
+            }
+
+            if (RETURN_DOM_IMPORT) {
+                returnNode = document.importNode(returnNode, true);
             }
 
             return returnNode;
