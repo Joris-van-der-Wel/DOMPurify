@@ -187,14 +187,18 @@
     ]);
 
     /** @typedef {Object} dompurify~DOMPurify~Configuration
-     * @property {String[]} [FORBID_TAGS]           Explicitly forbidden tags (overrides ALLOWED_TAGS/ADD_TAGS)
-     * @property {String[]} [FORBID_ATTR]           Explicitly forbidden attributes (overrides ALLOWED_ATTR/ADD_ATTR)
-     * @property {Boolean}  [ALLOW_DATA_ATTR=true]  Decide if custom data attributes are okay
-     * @property {Boolean}  [SAFE_FOR_JQUERY=false] Output should be safe for jQuery's $() factory?
-     * @property {Boolean}  [WHOLE_DOCUMENT=false]  Decide if document with &lt;html&gt;... should be returned
-     * @property {Boolean}  [RETURN_DOM=false]      Decide if a DOM node or a string should be returned
-     * @property {Boolean}  [SANITIZE_DOM=true]     Output should be free from DOM clobbering attacks?
-     * @property {Boolean}  [KEEP_CONTENT=true]     Keep element content when removing element?
+     * @property {String[]} [FORBID_TAGS]               Explicitly forbidden tags (overrides ALLOWED_TAGS/ADD_TAGS)
+     * @property {String[]} [FORBID_ATTR]               Explicitly forbidden attributes (overrides ALLOWED_ATTR/ADD_ATTR)
+     * @property {Boolean}  [ALLOW_DATA_ATTR=true]      Decide if custom data attributes are okay
+     * @property {Boolean}  [SAFE_FOR_JQUERY=false]     Output should be safe for jQuery's $() factory?
+     * @property {Boolean}  [WHOLE_DOCUMENT=false]      Decide if document with &lt;html&gt;... should be returned
+     * @property {Boolean}  [RETURN_DOM=false]          Decide if a DOM `HTMLBodyElement` should be returned,
+     *                                                  instead of a html string. If `WHOLE_DOCUMENT` is enabled a
+     *                                                 `HTMLHtmlElement` will be returned instead
+     * @property {Boolean}  [RETURN_DOM_FRAGMENT=false] Decide if a DOM `DocumentFragment` should be returned,
+     *                                                  instead of a html string
+     * @property {Boolean}  [SANITIZE_DOM=true]         Output should be free from DOM clobbering attacks?
+     * @property {Boolean}  [KEEP_CONTENT=true]         Keep element content when removing element?
      */
 
     var FORBID_TAGS = null;
@@ -203,6 +207,7 @@
     var SAFE_FOR_JQUERY = false;
     var WHOLE_DOCUMENT = false;
     var RETURN_DOM = false;
+    var RETURN_DOM_FRAGMENT = false;
     var SANITIZE_DOM = true;
     var KEEP_CONTENT = true;
 
@@ -248,12 +253,17 @@
             _addToSet({}, cfg.FORBID_TAGS) : {};
         FORBID_ATTR = 'FORBID_ATTR' in cfg ?
             _addToSet({}, cfg.FORBID_ATTR) : {};
-        ALLOW_DATA_ATTR = cfg.ALLOW_DATA_ATTR !== false; // Default true
-        SAFE_FOR_JQUERY = cfg.SAFE_FOR_JQUERY  || false; // Default false
-        WHOLE_DOCUMENT  = cfg.WHOLE_DOCUMENT   || false; // Default false
-        RETURN_DOM      = cfg.RETURN_DOM       || false; // Default false
-        SANITIZE_DOM    = cfg.SANITIZE_DOM    !== false; // Default true
-        KEEP_CONTENT    = cfg.KEEP_CONTENT    !== false; // Default true
+        ALLOW_DATA_ATTR     = cfg.ALLOW_DATA_ATTR !== false; // Default true
+        SAFE_FOR_JQUERY     = cfg.SAFE_FOR_JQUERY     || false; // Default false
+        WHOLE_DOCUMENT      = cfg.WHOLE_DOCUMENT      || false; // Default false
+        RETURN_DOM          = cfg.RETURN_DOM          || false; // Default false
+        RETURN_DOM_FRAGMENT = cfg.RETURN_DOM_FRAGMENT || false; // Default false
+        SANITIZE_DOM        = cfg.SANITIZE_DOM        !== false; // Default true
+        KEEP_CONTENT        = cfg.KEEP_CONTENT        !== false; // Default true
+
+        if (RETURN_DOM_FRAGMENT) {
+            RETURN_DOM = true;
+        }
 
         /* Merge configuration parameters */
         if (cfg.ADD_TAGS) {
@@ -638,10 +648,23 @@
             _sanitizeAttributes(currentNode);
         }
 
+        var returnNode;
+
         /* Return sanitized string or DOM */
         if (RETURN_DOM) {
-            return body;
+
+            if (RETURN_DOM_FRAGMENT) {
+                returnNode = Object.getPrototypeOf(body.ownerDocument).createDocumentFragment.call(body.ownerDocument);
+                while (body.firstChild) {
+                    returnNode.appendChild(body.firstChild);
+                }
+            } else {
+                returnNode = body;
+            }
+
+            return returnNode;
         }
+
         return WHOLE_DOCUMENT ? body.outerHTML : body.innerHTML;
     };
 
