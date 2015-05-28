@@ -6,6 +6,18 @@
     if (typeof define === 'function' && define.amd) {
         define(function(){ return factory(root); });
     } else if (typeof module !== 'undefined') {
+        /**
+         * This module exports a function that expects a Window (with a document) parameter and
+         * returns an DOMPurify object.
+         * A useable DOMPurify object is exported if a global document is found (e.g. when
+         * running in a browser).
+         *
+         * @function dompurify
+         * @exports module:dompurify
+         * @param {Window} window
+         * @param {HTMLDocument} window.document
+         * @return {dompurify~DOMPurify}
+         */
         module.exports = factory(root);
     } else {
         root.DOMPurify = factory(root);
@@ -13,6 +25,7 @@
 }(function factory(window) {
     'use strict';
 
+    /** @class dompurify~DOMPurify */
     var DOMPurify = function(window) {
         return factory(window);
     };
@@ -20,6 +33,9 @@
     /**
      * Version label, exposed for easier checks
      * if DOMPurify is up to date or not
+     * @member {String} version
+     * @memberOf dompurify~DOMPurify
+     * @instance
      */
     DOMPurify.version = '0.6.4';
 
@@ -44,6 +60,9 @@
 
     /**
      * Expose whether this browser supports running the full DOMPurify.
+     * @member {Boolean} isSupported
+     * @memberOf dompurify~DOMPurify
+     * @instance
      */
     DOMPurify.isSupported =
         typeof document.implementation.createHTMLDocument !== 'undefined' &&
@@ -58,7 +77,11 @@
         return set;
     };
 
-    /* Shallow clone an object */
+    /** Shallow clone an object
+     * @param object
+     * @memberOf module:dompurify
+     * @private
+     */
     var _cloneObj = function(object) {
         var newObject = {};
         var property;
@@ -163,28 +186,24 @@
         'xlink:href','xml:id','xlink:title','xml:space'
     ]);
 
-    /* Explicitly forbidden tags (overrides ALLOWED_TAGS/ADD_TAGS) */
+    /** @typedef {Object} dompurify~DOMPurify~Configuration
+     * @property {String[]} [FORBID_TAGS]           Explicitly forbidden tags (overrides ALLOWED_TAGS/ADD_TAGS)
+     * @property {String[]} [FORBID_ATTR]           Explicitly forbidden attributes (overrides ALLOWED_ATTR/ADD_ATTR)
+     * @property {Boolean}  [ALLOW_DATA_ATTR=true]  Decide if custom data attributes are okay
+     * @property {Boolean}  [SAFE_FOR_JQUERY=false] Output should be safe for jQuery's $() factory?
+     * @property {Boolean}  [WHOLE_DOCUMENT=false]  Decide if document with &lt;html&gt;... should be returned
+     * @property {Boolean}  [RETURN_DOM=false]      Decide if a DOM node or a string should be returned
+     * @property {Boolean}  [SANITIZE_DOM=true]     Output should be free from DOM clobbering attacks?
+     * @property {Boolean}  [KEEP_CONTENT=true]     Keep element content when removing element?
+     */
+
     var FORBID_TAGS = null;
-
-    /* Explicitly forbidden attributes (overrides ALLOWED_ATTR/ADD_ATTR) */
     var FORBID_ATTR = null;
-
-    /* Decide if custom data attributes are okay */
     var ALLOW_DATA_ATTR = true;
-
-    /* Output should be safe for jQuery's $() factory? */
     var SAFE_FOR_JQUERY = false;
-
-    /* Decide if document with <html>... should be returned */
     var WHOLE_DOCUMENT = false;
-
-    /* Decide if a DOM node or a string should be returned */
     var RETURN_DOM = false;
-
-    /* Output should be free from DOM clobbering attacks? */
     var SANITIZE_DOM = true;
-
-    /* Keep element content when removing element? */
     var KEEP_CONTENT = true;
 
     /* Tags to keep content from (when KEEP_CONTENT is true) */
@@ -210,7 +229,9 @@
     /**
      * _parseConfig
      *
-     * @param  optional config literal
+     * @param {dompurify~DOMPurify~Configuration} [cfg] config object
+     * @memberOf module:dompurify
+     * @private
      */
     var _parseConfig = function(cfg) {
         /* Shield configuration object from tampering */
@@ -261,8 +282,10 @@
    /**
      * _initDocument
      *
-     * @param  a string of dirty markup
-     * @return a DOM, filled with the dirty markup
+     * @param {String} dirty a string of dirty markup
+     * @return {HTMLElement} a DOM element, filled with the dirty markup
+     * @memberOf module:dompurify
+     * @private
      */
     var _initDocument = function(dirty) {
         /* Create documents to map markup to */
@@ -291,8 +314,8 @@
     /**
      * _createIterator
      *
-     * @param  document/fragment to create iterator for
-     * @return iterator instance
+     * @param {Node} doc document/fragment to create iterator for
+     * @return {NodeIterator} iterator instance
      */
     var _createIterator = function(doc) {
         return document.createNodeIterator(
@@ -308,8 +331,10 @@
     /**
      * _isClobbered
      *
-     * @param  element to check for clobbering attacks
-     * @return true if clobbered, false if safe
+     * @param {Node} elm element to check for clobbering attacks
+     * @return {Boolean} true if clobbered, false if safe
+     * @memberOf module:dompurify
+     * @private
      */
     var _isClobbered = function(elm) {
         if (elm instanceof Text) {
@@ -351,8 +376,10 @@
      * @protect currentNode
      * @protect insertAdjacentHTML
      *
-     * @param   node to check for permission to exist
-     * @return  true if node was killed, false if left alive
+     * @param {Node} currentNode node to check for permission to exist
+     * @return {Boolean} true if currentNode was killed, false if left alive
+     * @memberOf module:dompurify
+     * @private
      */
     var _sanitizeElements = function(currentNode) {
         /* Execute a hook if present */
@@ -409,8 +436,9 @@
      * @protect setAttribute
      * @protect cloneNode
      *
-     * @param   node to sanitize
-     * @return  void
+     * @param {Node} currentNode node to sanitize
+     * @memberOf module:dompurify
+     * @private
      */
     var _sanitizeAttributes = function(currentNode) {
         /* Execute a hook if present */
@@ -503,8 +531,9 @@
     /**
      * _sanitizeShadowDOM
      *
-     * @param  fragment to iterate over recursively
-     * @return void
+     * @param {DocumentFragment} fragment to iterate over recursively
+     * @memberOf module:dompurify
+     * @private
      */
     var _sanitizeShadowDOM = function(fragment) {
         var shadowNode;
@@ -539,8 +568,11 @@
      * _executeHook
      * Execute user configurable hooks
      *
-     * @param  {String} entryPoint  Name of the hook's entry point
-     * @param  {Node} currentNode
+     * @param {String} entryPoint  Name of the hook's entry point
+     * @param {Node} currentNode
+     * @param {*} data
+     * @memberOf module:dompurify
+     * @private
      */
     var _executeHook = function(entryPoint, currentNode, data) {
         if (!hooks[entryPoint]) { return; }
@@ -554,8 +586,12 @@
      * sanitize
      * Public method providing core sanitation functionality
      *
-     * @param {String} dirty string
-     * @param {Object} configuration object
+     * @method sanitize
+     * @param {String} dirty html to sanitize
+     * @param {dompurify~DOMPurify~Configuration} [cfg] configuration object
+     * @return {String|Node} Sanitized html or Node (depending on the configuration)
+     * @memberOf dompurify~DOMPurify
+     * @instance
      */
     DOMPurify.sanitize = function(dirty, cfg) {
         /* Check we can run. Otherwise fall back or ignore */
@@ -613,8 +649,11 @@
      * addHook
      * Public method to add DOMPurify hooks
      *
+     * @method addHook
      * @param {String} entryPoint
      * @param {Function} hookFunction
+     * @memberOf dompurify~DOMPurify
+     * @instance
      */
     DOMPurify.addHook = function(entryPoint, hookFunction) {
         if (typeof hookFunction !== 'function') { return; }
@@ -627,8 +666,10 @@
      * Public method to remove a DOMPurify hook at a given entryPoint
      * (pops it from the stack of hooks if more are present)
      *
+     * @method removeHook
      * @param {String} entryPoint
-     * @return void
+     * @memberOf dompurify~DOMPurify
+     * @instance
      */
     DOMPurify.removeHook = function(entryPoint) {
         if (hooks[entryPoint]) {
@@ -640,8 +681,10 @@
      * removeHooks
      * Public method to remove all DOMPurify hooks at a given entryPoint
      *
+     * @method removeHooks
      * @param  {String} entryPoint
-     * @return void
+     * @memberOf dompurify~DOMPurify
+     * @instance
      */
     DOMPurify.removeHooks = function(entryPoint) {
         if (hooks[entryPoint]) {
@@ -653,7 +696,9 @@
      * removeAllHooks
      * Public method to remove all DOMPurify hooks
      *
-     * @return void
+     * @method removeAllHooks
+     * @memberOf dompurify~DOMPurify
+     * @instance
      */
     DOMPurify.removeAllHooks = function() {
         hooks = [];
